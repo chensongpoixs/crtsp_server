@@ -1,8 +1,14 @@
-﻿#include <iostream>
-//#include <WinSock2.h>
-//#include <winsock2.h>
-//#pragma comment (lib, "ws2_32.lib") 
+﻿/***********************************************************************************************
+created: 		2023-12-06
 
+author:			chensong
+
+purpose:		config
+ 
+************************************************************************************************/
+
+
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -28,7 +34,7 @@ static const uint16_t   DEFAULT_SERVER_RTP_PORT = 55532;
 static const uint16_t   DEFAULT_SERVER_RTCP_PORT = 55533;
 
 
-void init_network()
+static void init_network()
 {
 	//初始化 DLL
 	WSADATA wsaData;
@@ -177,7 +183,7 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 	{
 		int32_t recv_len = 0;
 		recv_len = ::recv(fd, rbuf, 2000, 0);
-		if (recv_len < 0)
+		if (recv_len <= 0)
 		{
 			break;
 		}
@@ -252,7 +258,10 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 					break;
 				}
 			}
-
+			else {
+				printf("未定义的method = %s \n", method);
+				break;
+			}
 			printf("-------------------------------------------\n");
 			printf("%s sbuf = %s\n", __FUNCTION__, sbuf);
 
@@ -267,8 +276,12 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 				{
 					Sleep(40);
 				}
+				break;
 			}
-			
+			memset(method, 0, sizeof(method) / sizeof(char));
+			memset(url, 0, sizeof(url) / sizeof(char));
+			CSeq = 0;
+		}
 	}
 	
 	::closesocket(fd);
@@ -279,61 +292,56 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 }
  
 
-//int main(int argc, char *argv[])
-//{
-//
-//	
-//
-//	return 0;
-//}
+ 
 
-int main(int argc, char *argv[])
-{
-	init_network();
-
-
-
-	int serversocketfd = create_tcp_socket();
-
-	if (serversocketfd < 0)
+	int main(int argc, char *argv[])
 	{
-		::WSACleanup();
-		printf("failed to create tcp socket !!!\n");
-		return -1;
-	}
-
-	if (bind_socket_addr(serversocketfd, "0.0.0.0", DEFAULT_RTSP_PORT) < 0)
-	{
-		printf("bind addr failed !!!\n");
-		return -1;
-	}
-
-	if (::listen(serversocketfd, 10) < 0)
-	{
-		printf("listen failed !!!\n");
-		return -1;
-	}
-
-	printf("%s rtsp://127.0.0.1:%d\n", __FILE__, DEFAULT_RTSP_PORT);
+		init_network();
 
 
-	while (true)
-	{
-		//int client_fd;
-		char client_ip[40] = { 0 };
-		uint16_t client_port;
 
-		int client_fd = accept_client(serversocketfd, client_ip, &client_port);
-		if (client_fd < 0)
+		int serversocketfd = create_tcp_socket();
+
+		if (serversocketfd < 0)
 		{
-			printf("accept client failed !!!\n");
+			::WSACleanup();
+			printf("failed to create tcp socket !!!\n");
 			return -1;
 		}
 
-		printf("accept client:client ip = %s, client port = %u\n", client_ip, client_port);
+		if (bind_socket_addr(serversocketfd, "0.0.0.0", DEFAULT_RTSP_PORT) < 0)
+		{
+			printf("bind addr failed !!!\n");
+			return -1;
+		}
 
-		do_client(client_fd, client_ip, client_port);
+		if (::listen(serversocketfd, 10) < 0)
+		{
+			printf("listen failed !!!\n");
+			return -1;
+		}
+
+		printf("%s rtsp://127.0.0.1:%d\n", __FILE__, DEFAULT_RTSP_PORT);
+
+
+		while (true)
+		{
+			//int client_fd;
+			char client_ip[40] = { 0 };
+			uint16_t client_port;
+
+			int client_fd = accept_client(serversocketfd, client_ip, &client_port);
+			if (client_fd < 0)
+			{
+				printf("accept client failed !!!\n");
+				return -1;
+			}
+
+			printf("accept client:client ip = %s, client port = %u\n", client_ip, client_port);
+
+			do_client(client_fd, client_ip, client_port);
+		}
+
+		::closesocket(serversocketfd);
+		return 0;
 	}
-
-	::closesocket(serversocketfd);
-	return 0;
