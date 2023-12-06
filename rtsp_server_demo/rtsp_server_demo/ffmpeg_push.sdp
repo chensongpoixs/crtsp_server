@@ -1,0 +1,60 @@
+OPTIONS rtsp://127.0.0.1:554/live/chensong RTSP/1.0
+CSeq: 1
+User-Agent: Lavf58.76.100
+
+RTSP/1.0 200 OK
+CSeq: 1
+Date: Wed, Dec 06 2023 07:23:48 GMT
+Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, ANNOUNCE, RECORD, SET_PARAMETER, GET_PARAMETER
+Server: ZLMediaKit(git hash:8682a65/2023-12-05T01:58:45+08:00,branch:master,build time:2023-12-05T14:02:50)
+
+ANNOUNCE rtsp://127.0.0.1:554/live/chensong RTSP/1.0
+Content-Type: application/sdp
+CSeq: 2
+User-Agent: Lavf58.76.100
+Content-Length: 317
+
+v=0
+o=- 0 0 IN IP4 127.0.0.1
+s=No Name
+c=IN IP4 127.0.0.1
+t=0 0
+a=tool:libavformat 58.76.100
+m=video 0 RTP/AVP 96
+b=AS:14010
+a=rtpmap:96 MP4V-ES/90000
+a=fmtp:96 profile-level-id=1; config=000001B001000001B58913000001000000012000C48D8800CD3C04871463000001B24C61766335382E3133342E313030
+a=control:streamid=0
+RTSP/1.0 200 OK
+CSeq: 2
+Date: Wed, Dec 06 2023 07:23:48 GMT
+Server: ZLMediaKit(git hash:8682a65/2023-12-05T01:58:45+08:00,branch:master,build time:2023-12-05T14:02:50)
+Session: HSVfGo7Ndnf5
+
+SETUP rtsp://127.0.0.1:554/live/chensong/streamid=0 RTSP/1.0
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1;mode=record
+CSeq: 3
+User-Agent: Lavf58.76.100
+Session: HSVfGo7Ndnf5
+
+RTSP/1.0 200 OK
+CSeq: 3
+Date: Wed, Dec 06 2023 07:23:48 GMT
+Server: ZLMediaKit(git hash:8682a65/2023-12-05T01:58:45+08:00,branch:master,build time:2023-12-05T14:02:50)
+Session: HSVfGo7Ndnf5
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1;ssrc=00000000
+x-Dynamic-Rate: 1
+x-Transport-Options: late-tolerance=1.400000
+
+RECORD rtsp://127.0.0.1:554/live/chensong RTSP/1.0
+Range: npt=0.000-
+CSeq: 4
+User-Agent: Lavf58.76.100
+Session: HSVfGo7Ndnf5
+
+RTSP/1.0 200 OK
+CSeq: 4
+Date: Wed, Dec 06 2023 07:23:48 GMT
+RTP-Info: url=rtsp://127.0.0.1:554/live/chensong/streamid=0
+Server: ZLMediaKit(git hash:8682a65/2023-12-05T01:58:45+08:00,branch:master,build time:2023-12-05T14:02:50)
+Session: HSVfGo7Ndnf5
