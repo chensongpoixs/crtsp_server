@@ -224,7 +224,7 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 			}
 			if (strstr(line, "Range"))
 			{
-				if (sscanf(line, "Rage: npt=%f-\r\n", &range) != 1)
+				if (sscanf(line, "Range: npt=%f-\r\n", &range) != 1)
 				{
 					printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
 				}
