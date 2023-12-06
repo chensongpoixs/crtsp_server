@@ -27,7 +27,7 @@ purpose:		config
 #pragma warning( disable : 4996 )
 
  
-static const uint16_t  DEFAULT_RTSP_PORT = 8554;
+static const uint16_t  DEFAULT_RTSP_PORT = 8556;
 
 
 static const uint16_t   DEFAULT_SERVER_RTP_PORT = 55532;
@@ -135,7 +135,7 @@ static int handle_cmd_describe  (char* result, int cseq, char* url)
 	return 0;
 }
 
-static int handle_cmd_setup(char* result, int cseq, int clientRtpPort)
+static int handle_cmd_setup(char* result, int cseq, uint16_t clientRtpPort)
 {
 	sprintf(result, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
@@ -171,9 +171,12 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 	char url[100] = {0};
 	char version[40] = {0};
 	int32_t CSeq = 0;
+	char   accept[512] = { 0 };
+	double range = 0.0;
+	char   session[512] = { 0 };
 
-	uint16_t client_rtp_port;
-	uint16_t client_rtcp_port;
+	uint16_t client_rtp_port = 0;
+	uint16_t client_rtcp_port = 0;
 
 	char * rbuf = (char *)::malloc(10000);
 	char * sbuf = (char *)::malloc(10000);
@@ -207,24 +210,52 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 				{
 					printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
 				}
-				else if (strstr(line, "CSeq"))
+				line = strtok(NULL, sep);
+			}
+			if (!strncmp(line, "Transport:", strlen("Transport:")))
+			{
+				// Transport: RTP/AVP/UDP;unicast;client_port=13358-13359
+				// Transport: RTP/AVP;unicast;client_port=13358-13359
+				if (sscanf(line, "Transport: RTP/AVP/UDP;unicast;client_port=%lu-%lu\r\n", &client_rtp_port, &client_rtcp_port) != 2)
 				{
-					if (sscanf(line, "CSeq: %d\r\n", &CSeq) != 1)
-					{
-						printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
-					}
-				}
-				else if (!strncmp(line, "Transport:", strlen("Transport:")))
-				{
-					// Transport: RTP/AVP/UDP;unicast;client_port=13358-13359
-					// Transport: RTP/AVP;unicast;client_port=13358-13359
-					if (sscanf(line, "Transport: RTP/AVP/UDP;unicast;client_port=%d-%d\r\n", &client_rtp_port, &client_rtcp_port) != 2)
-					{
-						printf("[%s][%d][ERROR]Transport\n", __FUNCTION__, __LINE__);
-					}
+					printf("[%s][%d][ERROR]Transport\n", __FUNCTION__, __LINE__);
 				}
 				line = strtok(NULL, sep);
 			}
+			if (strstr(line, "Range"))
+			{
+				if (sscanf(line, "Rage: npt=%f-\r\n", &range) != 1)
+				{
+					printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
+				}
+				line = strtok(NULL, sep);
+			}
+			if (strstr(line, "Accept"))
+			{
+				if (sscanf(line, "Accept: %s\r\n", &accept) != 1)
+				{
+					printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
+				}
+				line = strtok(NULL, sep);
+			}
+			if (strstr(line, "CSeq"))
+			{
+				if (sscanf(line, "CSeq: %d\r\n", &CSeq) != 1)
+				{
+					printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
+				}
+				line = strtok(NULL, sep);
+			}
+			
+			if (strstr(line, "Session"))
+			{
+				if (sscanf(line, "Session: %s\r\n", &session) != 1)
+				{
+					printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
+				}
+				line = strtok(NULL, sep);
+			}
+
 			if (!strcmp(method, "OPTIONS"))
 			{
 				if (handle_cmd_options(sbuf, CSeq))
@@ -258,7 +289,8 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 					break;
 				}
 			}
-			else {
+			else 
+			{
 				printf("未定义的method = %s \n", method);
 				break;
 			}
@@ -287,7 +319,7 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 	::closesocket(fd);
 	free(rbuf);
 	free(sbuf);
-
+	printf("client ip = %s, port = %u exit \n", client_ip, client_port);
 	return -1;
 }
  
