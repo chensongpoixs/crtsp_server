@@ -42,6 +42,35 @@ static void init_network()
 
 }
 
+static char const* dateHeader() 
+{
+	static char buf[200];
+#if !defined(_WIN32_WCE)
+	time_t tt = time(NULL);
+	strftime(buf, sizeof buf, "Date: %a, %b %d %Y %H:%M:%S GMT\r\n", gmtime(&tt));
+#else
+	// WinCE apparently doesn't have "time()", "strftime()", or "gmtime()",
+	// so generate the "Date:" header a different, WinCE-specific way.
+	// (Thanks to Pierre l'Hussiez for this code)
+	// RSF: But where is the "Date: " string?  This code doesn't look quite right...
+	SYSTEMTIME SystemTime;
+	GetSystemTime(&SystemTime);
+	WCHAR dateFormat[] = L"ddd, MMM dd yyyy";
+	WCHAR timeFormat[] = L"HH:mm:ss GMT\r\n";
+	WCHAR inBuf[200];
+	DWORD locale = LOCALE_NEUTRAL;
+
+	int ret = GetDateFormat(locale, 0, &SystemTime,
+		(LPTSTR)dateFormat, (LPTSTR)inBuf, sizeof inBuf);
+	inBuf[ret - 1] = ' ';
+	ret = GetTimeFormat(locale, 0, &SystemTime,
+		(LPTSTR)timeFormat,
+		(LPTSTR)inBuf + ret, (sizeof inBuf) - ret);
+	wcstombs(buf, inBuf, wcslen(inBuf));
+#endif
+	return buf;
+}
+
 
 static int create_tcp_socket()
 {
@@ -99,9 +128,10 @@ static int handle_cmd_options  (char* result, int cseq)
 {
 	sprintf(result, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
-		"Public: OPTIONS, DESCRIBE, SETUP, PLAY\r\n"
+		"%s"
+		"Public: OPTIONS, DESCRIBE, TEARDOWN, SETUP, PLAY\r\n"
 		"\r\n",
-		cseq);
+		cseq, dateHeader());
 
 	return 0;
 }
@@ -122,12 +152,13 @@ static int handle_cmd_describe  (char* result, int cseq, char* url)
 		"a=control:track0\r\n",
 		time(NULL), localIp);
 
-	sprintf(result, "RTSP/1.0 200 OK\r\nCSeq: %d\r\n"
+	sprintf(result, "RTSP/1.0 200 OK\r\nCSeq: %d\r\n%s"
 		"Content-Base: %s\r\n"
 		"Content-type: application/sdp\r\n"
 		"Content-length: %zu\r\n\r\n"
 		"%s",
 		cseq,
+		dateHeader(),
 		url,
 		strlen(sdp),
 		sdp);
@@ -139,10 +170,12 @@ static int handle_cmd_setup(char* result, int cseq, uint16_t clientRtpPort)
 {
 	sprintf(result, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
+		"%s"
 		"Transport: RTP/AVP;unicast;client_port=%d-%d;server_port=%d-%d\r\n"
 		"Session: 66334873\r\n"
 		"\r\n",
 		cseq,
+		dateHeader(),
 		clientRtpPort,
 		clientRtpPort + 1,
 		DEFAULT_SERVER_RTP_PORT,
@@ -150,19 +183,65 @@ static int handle_cmd_setup(char* result, int cseq, uint16_t clientRtpPort)
 
 	return 0;
 }
-
-static int handle_cmd_play(char* result, int cseq)
+/// <summary>
+/// PLAY rtsp://192.168.1.133/input.264/ RTSP/1.0
+//  CSeq: 5
+//  User-Agent: LibVLC/3.0.18 (LIVE555 Streaming Media v2016.11.28)
+//  Session: 7043C27D
+//  Range: npt=0.000-
+//  Range: npt=start-end
+/// 
+/// 
+/// 
+/// 
+/// RTSP/1.0 200 OK
+/// CSeq: 5
+/// Date : Wed, Dec 06 2023 05 : 58 : 43 GMT
+/// Range : npt = 0.000 -
+/// Session : 7043C27D
+/// RTP-Info:url=rtsp://192.168.1.133/input.264/track1;seq=45921;rtptime=2096655247
+/// </summary>
+/// <param name="result"></param>
+/// <param name="cseq"></param>
+/// <returns></returns>
+static int handle_cmd_play(char* result, const char * url, const char * track1, int start_seq, int rtptime, int cseq)
 {
 	sprintf(result, "RTSP/1.0 200 OK\r\n"
 		"CSeq: %d\r\n"
+		"%s"
 		"Range: npt=0.000-\r\n"
-		"Session: 66334873; timeout=10\r\n\r\n",
-		cseq);
+		"Session: 66334873; timeout=10\r\n"
+		"RTP-Info:url=%s/%s;seq=%d;rtptime=%d\r\n\r\n",
+		cseq,
+		dateHeader(),
+		url, track1, start_seq, rtptime);
+	 
 
 	return 0;
 }
 
 
+/// <summary>
+/// RTPS客户端断开发送信息包
+/// TEARDOWN rtsp://192.168.1.133/input.264/ RTSP/1.0
+/// CSeq: 6
+/// User-Agent: LibVLC/3.0.18 (LIVE555 Streaming Media v2016.11.28)
+/// Session: 7043C27D
+/// 
+/// RTSP/1.0 200 OK
+/// CSeq: 6
+/// Date: Wed, Dec 06 2023 05:58:53 GMT
+/// </summary>
+/// <returns></returns>
+static int handle_cmd_teardown(char *result, int cseq)  
+{
+	sprintf(result, "RTSP/1.0 200 OK\r\n"
+		"CSeq: %d\r\n"
+		"%s",
+		cseq,
+		dateHeader() );
+	return 0;
+}
 
 static int do_client(int fd, char *client_ip, uint16_t   client_port)
 {
@@ -172,7 +251,8 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 	char version[40] = {0};
 	int32_t CSeq = 0;
 	char   accept[512] = { 0 };
-	double range = 0.0;
+	double range_starttime = 0.0;
+	double range_endtime = 0.0;
 	char   session[512] = { 0 };
 
 	uint16_t client_rtp_port = 0;
@@ -203,7 +283,8 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 			if (strstr(line, "OPTIONS") ||
 				strstr(line, "DESCRIBE") ||
 				strstr(line, "SETUP") ||
-				strstr(line, "PLAY")
+				strstr(line, "PLAY") ||
+				strstr(line, "TEARDOWN")
 				)
 			{
 				if (sscanf(line, "%s %s %s\r\n", method, url, version) != 3)
@@ -212,11 +293,21 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 				}
 				line = strtok(NULL, sep);
 			}
-			if (!strncmp(line, "Transport:", strlen("Transport:")))
+			if (!strncmp(line, "Transport: RTP/AVP/UDP;", strlen("Transport: RTP/AVP/UDP;")))
 			{
 				// Transport: RTP/AVP/UDP;unicast;client_port=13358-13359
 				// Transport: RTP/AVP;unicast;client_port=13358-13359
-				if (sscanf(line, "Transport: RTP/AVP/UDP;unicast;client_port=%lu-%lu\r\n", &client_rtp_port, &client_rtcp_port) != 2)
+				if (sscanf(line, "Transport: RTP/AVP/UDP;unicast;client_port=%u-%u\r\n", &client_rtp_port, &client_rtcp_port) != 2)
+				{
+					printf("[%s][%d][ERROR]Transport\n", __FUNCTION__, __LINE__);
+				}
+				line = strtok(NULL, sep);
+			}
+			if (!strncmp(line, "Transport: RTP/AVP;", strlen("Transport: RTP/AVP;")))
+			{
+				// Transport: RTP/AVP/UDP;unicast;client_port=13358-13359
+				// Transport: RTP/AVP;unicast;client_port=13358-13359
+				if (sscanf(line, "Transport: RTP/AVP;unicast;client_port=%u-%u\r\n", &client_rtp_port, &client_rtcp_port) != 2)
 				{
 					printf("[%s][%d][ERROR]Transport\n", __FUNCTION__, __LINE__);
 				}
@@ -224,7 +315,7 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 			}
 			if (strstr(line, "Range"))
 			{
-				if (sscanf(line, "Range: npt=%f-\r\n", &range) != 1)
+				if (sscanf(line, "Range: npt=%f-%f\r\n", &range_starttime, &range_endtime) != 1)
 				{
 					printf("[%s][%d][ERROR]\n", __FUNCTION__, __LINE__);
 				}
@@ -283,7 +374,15 @@ static int do_client(int fd, char *client_ip, uint16_t   client_port)
 			}
 			else if (!strcmp(method, "PLAY"))
 			{
-				if (handle_cmd_play(sbuf, CSeq))
+				if (handle_cmd_play(sbuf, url,"track1", 45, ::time(NULL), CSeq))
+				{
+					printf("handle play failed !!!\n");
+					break;
+				}
+			}
+			else if (!strcmp(method, "TEARDOWN"))
+			{
+				if (handle_cmd_teardown(sbuf,   CSeq))
 				{
 					printf("handle play failed !!!\n");
 					break;
