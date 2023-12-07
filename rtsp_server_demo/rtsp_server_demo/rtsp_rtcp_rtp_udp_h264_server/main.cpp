@@ -302,8 +302,10 @@ static int handleCmd_DESCRIBE(char* result, int cseq, char* url)
 		"o=- 9%ld 1 IN IP4 %s\r\n"
 		"t=0 0\r\n"
 		"a=control:*\r\n"
+	//	"a=range:npt=0-\r\n"
 		"m=video 0 RTP/AVP 96\r\n"
 		"a=rtpmap:96 H264/90000\r\n"
+		//"a=fmtp:96 packetization-mode=1;profile-level-id=640020;sprop-parameter-sets=Z2QAIKzZQ4MeX/8BAABREAAAAwAQAAADAyDxgxlg,aOvssiw=\r\n"
 		"a=control:track0\r\n",
 		time(NULL), localIp);
 
@@ -342,6 +344,7 @@ static int handleCmd_PLAY(char* result, int cseq)
 		"CSeq: %d\r\n"
 		"Range: npt=0.000-\r\n"
 		"Session: 66334873; timeout=10\r\n\r\n",
+		//"RTP-Info: url=rtsp://192.168.1.133:8554/track0;seq=55;rtptime=1469809188\r\n\r\n",
 		cseq);
 
 	return 0;
@@ -387,11 +390,21 @@ static void doClient(int clientSockfd, const char* clientIP, int clientPort) {
 					// error
 				}
 			}
-			else if (!strncmp(line, "Transport:", strlen("Transport:"))) {
+			else if (!strncmp(line, "Transport: RTP/AVP/UDP;", strlen("Transport: RTP/AVP/UDP;"))) {
 				// Transport: RTP/AVP/UDP;unicast;client_port=13358-13359
 				// Transport: RTP/AVP;unicast;client_port=13358-13359
 
 				if (sscanf(line, "Transport: RTP/AVP/UDP;unicast;client_port=%d-%d\r\n",
+					&clientRtpPort, &clientRtcpPort) != 2) {
+					// error
+					printf("parse Transport error \n");
+				}
+			}
+			else if (!strncmp(line, "Transport: RTP/AVP;", strlen("Transport: RTP/AVP;"))) {
+				// Transport: RTP/AVP/UDP;unicast;client_port=13358-13359
+				// Transport: RTP/AVP;unicast;client_port=13358-13359
+
+				if (sscanf(line, "Transport: RTP/AVP;unicast;client_port=%d-%d\r\n",
 					&clientRtpPort, &clientRtcpPort) != 2) {
 					// error
 					printf("parse Transport error \n");
