@@ -41,12 +41,47 @@ purpose:		rtsp
 #include <WS2tcpip.h>
 #include <windows.h>
 #include "crtp.h"
+#include "ch264.h"
+#include "cbase64.h"
 
 #define H264_FILE_NAME   "test.h264"
 #define SERVER_PORT      8554
 #define SERVER_RTP_PORT  55532
 #define SERVER_RTCP_PORT 55533
 #define BUF_MAX_SIZE     (1024*1024)
+
+
+static char* sub_file_name(const char* p)
+{
+	// rtsp://192.168.1.133:8554/live/test.h264
+	static char  buffer[1024] = { 0 };
+	memset(buffer, 0, sizeof(buffer));
+
+	uint32_t size = strlen(p);
+	//const char* end_ptr = p + size;
+	uint32_t start_index = 0;
+	for (uint32_t i = size - 1; i >= 0; --i)
+	{
+		// 
+		if (p[i] == ':')
+		{
+			start_index = i;
+			break;
+		}
+	}
+
+	while (p[start_index++] != '/')
+	{
+		
+	}
+	memcpy(buffer, p + start_index, size - start_index);
+	return buffer;
+	/*for (uint32_t i = start_index; i < size; ++i)
+	{
+
+	}*/
+}
+
 
 static int createTcpSocket()
 {
@@ -291,23 +326,69 @@ static int handleCmd_OPTIONS(char* result, int cseq)
 	return 0;
 }
 
+
+
 static int handleCmd_DESCRIBE(char* result, int cseq, char* url)
 {
 	char sdp[500];
-	char localIp[100];
+	char localIp[100] = {0};
 
-	sscanf(url, "rtsp://%[^:]:", localIp);
 
-	sprintf(sdp, "v=0\r\n"
-		"o=- 9%ld 1 IN IP4 %s\r\n"
-		"t=0 0\r\n"
-		"a=control:*\r\n"
-	//	"a=range:npt=0-\r\n"
-		"m=video 0 RTP/AVP 96\r\n"
-		"a=rtpmap:96 H264/90000\r\n"
-		//"a=fmtp:96 packetization-mode=1;profile-level-id=640020;sprop-parameter-sets=Z2QAIKzZQ4MeX/8BAABREAAAAwAQAAADAyDxgxlg,aOvssiw=\r\n"
-		"a=control:track0\r\n",
-		time(NULL), localIp);
+	uint32_t   local_port = 0;
+	//char *video_file[512] = {0};
+
+	sscanf(url, "rtsp://%[^:]:", localIp );
+	char* video_file = sub_file_name(url);
+	
+
+
+
+	
+
+
+	//sscanf(url, "rtsp://%[^:]:", localIp);
+	//sscanf(url, "rtsp://%s:%u/%s", localIp, local_port, video_file);
+	printf("[%s][%d][localip = %s][local port = %u][video file = %s]\n", __FUNCTION__, __LINE__, localIp, local_port, video_file);
+	
+	
+	std::string s_sps;
+	std::string s_pps;
+	 
+	
+	if (parse_h264_file_sps_pps(video_file, s_sps , s_pps ) == 0)
+	{
+		uint32_t profileLevelId = (s_sps[1] << 16) | (s_sps[2] << 8) | s_sps[3];
+		
+		std::string sps_base64 =  chen::base64_encode(s_sps);
+		std::string pps_base64 = chen::base64_encode(s_pps);
+		sprintf(sdp, "v=0\r\n"
+			"o=- 9%ld 1 IN IP4 %s\r\n"
+			"i=%s\r\n"
+			"t=0 0\r\n"
+			"a=control:*\r\n"
+			"a=range:npt=0-\r\n"
+			"b=AS:500\r\n"
+			"m=video 0 RTP/AVP 96\r\n"
+			"a=rtpmap:96 H264/90000\r\n"
+			"a=fmtp:96 packetization-mode=1;profile-level-id=%06X;sprop-parameter-sets=%s,%s\r\n"
+			"a=control:track0\r\n",
+			time(NULL), localIp,
+			video_file,
+			profileLevelId, sps_base64.c_str(), pps_base64.c_str());
+	}
+	else
+	{
+		sprintf(sdp, "v=0\r\n"
+			"o=- 9%ld 1 IN IP4 %s\r\n"
+			"t=0 0\r\n"
+			"a=control:*\r\n"
+			//	"a=range:npt=0-\r\n"
+			"m=video 0 RTP/AVP 96\r\n"
+			"a=rtpmap:96 H264/90000\r\n"
+			//"a=fmtp:96 packetization-mode=1;profile-level-id=640020;sprop-parameter-sets=Z2QAIKzZQ4MeX/8BAABREAAAAwAQAAADAyDxgxlg,aOvssiw=\r\n"
+			"a=control:track0\r\n",
+			time(NULL), localIp);
+	}
 
 	sprintf(result, "RTSP/1.0 200 OK\r\nCSeq: %d\r\n"
 		"Content-Base: %s\r\n"

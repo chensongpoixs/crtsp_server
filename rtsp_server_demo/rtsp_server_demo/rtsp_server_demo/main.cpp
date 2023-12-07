@@ -145,10 +145,13 @@ static int handle_cmd_describe  (char* result, int cseq, char* url)
 
 	sprintf(sdp, "v=0\r\n"
 		"o=- 9%ld 1 IN IP4 %s\r\n"
+		"s=H.264 Video, streamed by the rtsp server demo \r\n"
+		"i=test.264 \r\n"
 		"t=0 0\r\n"
 		"a=control:*\r\n"
 		"m=video 0 RTP/AVP 96\r\n"
 		"a=rtpmap:96 H264/90000\r\n"
+		"a=fmtp:96 packetization-mode=1;profile-level-id=640020;sprop-parameter-sets=Z2QAIKzZQ4MeX/8BAABREAAAAwAQAAADAyDxgxlg,aOvssiw= \r\n"
 		"a=control:track0\r\n",
 		time(NULL), localIp);
 
