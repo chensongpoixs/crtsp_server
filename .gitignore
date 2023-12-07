@@ -3,3 +3,7 @@
 /rtsp_server_demo/rtsp_server_demo/.vs
 /rtsp_server_demo/rtsp_server_demo/x64
 /emsdk
+/rtsp_server_demo/rtsp_server_demo/rtsp_rtcp_rtp_udp_h264_server/x64/Debug
+/rtsp_server_demo/rtsp_server_demo/rtsp_server_demo.VC.VC.opendb
+/rtsp_server_demo/rtsp_server_demo/rtsp_rtcp_rtp_udp_h264_server/test.h264
+/rtsp_server_demo/rtsp_server_demo/rtsp_server_demo.VC.db

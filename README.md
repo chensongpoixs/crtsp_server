@@ -14,3 +14,11 @@ ffmpeg -re -stream_loop -1 -i input.h264 -vcodec copy -rtsp_transport tcp -f rts
 
 ```
 
+
+提取h264码流命令
+
+```bash
+
+ffmpeg -i input.mp4 -codec copy -bsf: h264_mp4toannexb  -f h264 test.h264 
+```
+
