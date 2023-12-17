@@ -8,3 +8,7 @@
 /rtsp_server_demo/rtsp_server_demo/rtsp_rtcp_rtp_udp_h264_server/test.h264
 /rtsp_server_demo/rtsp_server_demo/rtsp_server_demo.VC.db
 /rtsp_server_demo/rtsp_server_demo/rtsp_rtcp_rtp_udp_h264_server/rtsp_rtcp_rtp_udp_h264_server.vcxproj.user
+/rtsp_server_demo/rtsp_server_demo/rtsp_udp_acc_server/rtsp_udp_acc_server.vcxproj.user
+/rtsp_server_demo/rtsp_server_demo/rtsp_udp_acc_server/input.aac
+/rtsp_server_demo/rtsp_server_demo/vsout
+/rtsp_server_demo/rtsp_server_demo/bin

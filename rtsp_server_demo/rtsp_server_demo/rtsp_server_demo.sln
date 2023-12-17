@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rtsp_server_demo", "rtsp_se
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rtsp_rtcp_rtp_udp_h264_server", "rtsp_rtcp_rtp_udp_h264_server\rtsp_rtcp_rtp_udp_h264_server.vcxproj", "{ABCBFD1F-A8B5-4604-8E9B-D7A2AA538604}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rtsp_udp_acc_server", "rtsp_udp_acc_server\rtsp_udp_acc_server.vcxproj", "{D472391E-52DE-40F7-9551-20E810ECC350}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{ABCBFD1F-A8B5-4604-8E9B-D7A2AA538604}.Release|x64.Build.0 = Release|x64
 		{ABCBFD1F-A8B5-4604-8E9B-D7A2AA538604}.Release|x86.ActiveCfg = Release|Win32
 		{ABCBFD1F-A8B5-4604-8E9B-D7A2AA538604}.Release|x86.Build.0 = Release|Win32
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Debug|x64.ActiveCfg = Debug|x64
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Debug|x64.Build.0 = Debug|x64
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Debug|x86.ActiveCfg = Debug|Win32
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Debug|x86.Build.0 = Debug|Win32
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Release|x64.ActiveCfg = Release|x64
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Release|x64.Build.0 = Release|x64
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Release|x86.ActiveCfg = Release|Win32
+		{D472391E-52DE-40F7-9551-20E810ECC350}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
