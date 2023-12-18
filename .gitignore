@@ -19,4 +19,4 @@
 /vsout
 /rtsp_rtcp_rtp_udp_h264_server/test.h264
 /rtsp_udp_acc_server/rtsp_udp_acc_server.vcxproj.user
-/rtsp_server_demo
+
