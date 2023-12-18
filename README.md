@@ -1,10 +1,28 @@
 # crtsp_server
 
-RTSP 协议开发
+RTSP 媒体服务
+
+
+[rtsp发送aac和h264 demo](rtsp_tcp_h264_aac_server)
+
+
+
+
 
 
 
 # ffmpeg 命令
+
+
+rtsp 使用tcp传输命令
+
+
+```bash 
+
+./ffplay -i   -rtsp_transport tcp  rtsp://127.0.0.1:8554/live/chensong
+
+```
+
 
 推流
 
